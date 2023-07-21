@@ -1,5 +1,36 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+const PORT = 8080;
+
+const express = require('express');
+const app = express();
+
+app.use(express.text({limit:'100mb'}));
+
+app.use('/api', (req, res, next) => {
+    console.log("New request received");
+    next()
+});
+
+app.post('/api/html/', async function (req, res)  {
+    try{
+        var pdfDoc = await buildPDF(req.body);
+        res.send(pdfDoc);
+    }   catch(e){
+        res.end(e.message || e.toString());
+    }
+});
+
+
+async function buildPDF(htmlContent){
+    console.log(htmlContent);
+    return(htmlContent);
+};
+
+
+
+app.listen(PORT, () => console.log('Server listening on port ' + PORT));
+
 
 
 (async()=> {
