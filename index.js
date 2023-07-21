@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+
 const fs = require('fs');
 const PORT = 8080;
 
@@ -13,43 +13,38 @@ app.use('/api', (req, res, next) => {
 });
 
 app.post('/api/html/', async function (req, res)  {
+    const puppeteer = require('puppeteer');
+    const htmlContent = req.body;
+    const browser = await puppeteer.launch({headless:'new', args:['--no-sandbox']});
     try{
-        var pdfDoc = await buildPDF(req.body);
-        res.send(pdfDoc);
-    }   catch(e){
-        res.end(e.message || e.toString());
+        console.log('Loading page...');
+        const page = await browser.newPage();  
+        await page.setContent(htmlContent, { waitUntil:'domcontentloaded'});
+        await page.emulateMediaType('screen');
+
+        console.log('Converting to PDF');
+        const pdf = await page.pdf({
+            margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' },
+            printBackground: true,
+            format: 'A4'    
+        });
+        console.log('Closing Browser')
+        await browser.close();
+        console.log('Browser Closed');
+        res.contentType("application/pdf");
+        res.send(pdf);
+    } catch(e){
+        
+        console.log(2);
+    res.end(e.message || e.toString());
+    } finally {
+        await browser.close();
     }
+    await browser.close();
+    console.log('Finished processing, listing on port ' + PORT);
 });
-
-
-async function buildPDF(htmlContent){
-    console.log(htmlContent);
-    return(htmlContent);
-};
-
-
 
 app.listen(PORT, () => console.log('Server listening on port ' + PORT));
 
 
 
-(async()=> {
-
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    const html = fs.readFileSync('sample.html', 'utf-8');
-
-
-    await page.setContent(html, { waitUntil:'domcontentloaded'});
-
-    await page.emulateMediaType('screen');
-
-    const pdf = await page.pdf({
-        path: 'result.pdf',
-        margin: { top: '100px', right: '50px', bottom: '100px', left: '50px' },
-        printBackground: true,
-        format: 'A4',
-    });
-
-    await browser.close()
-})();
